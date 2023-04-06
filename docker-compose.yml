@@ -1,0 +1,55 @@
+version: "3.7"
+
+services:
+  cache:
+    container_name: destiny_redis
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning --requirepass password
+    volumes: 
+      - cachedata:/data/cache
+    environment:
+      REDIS_PASSWORD: password
+
+  mongo:
+    image: mongo:5.0
+    restart: always
+    hostname: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - ~/data:/data/db
+      - ~/data/log:/var/log/mongodb/
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=secret
+  
+  app:
+    container_name: destiny-api
+    build: ./app
+    ports:
+      - "8080:8080"
+    stdin_open: true
+    tty: true
+    env_file:
+      - .env
+    environment:
+      MONGO_HOST: "mongo"
+      MONGO_PORT: '27017'
+      MONGO_USERNAME: "root"
+      MONGO_PASSWORD: "secret"
+      MONGO_DATABASE: "mongo"
+      REDIS_HOST: destiny_redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: password
+    depends_on:
+      - mongo
+      - cache
+
+volumes:
+  mongodb:
+    driver: local
+  cachedata:
+    driver: local
