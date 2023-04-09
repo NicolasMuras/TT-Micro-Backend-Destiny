@@ -20,6 +20,7 @@ type DestinyHandler interface {
 	Delete(ctx *gin.Context)
 	Create(ctx *gin.Context)
 	List(ctx *gin.Context)
+	RetrieveGroup(ctx *gin.Context)
 }
 
 // Interface define the methods for the handler.

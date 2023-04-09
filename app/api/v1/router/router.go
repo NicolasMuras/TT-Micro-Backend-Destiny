@@ -34,6 +34,9 @@ func NewRouter(h handlers.Interface) *Router {
 		v1.GET("/destiny", func(ctx *gin.Context) {
 			h.List(ctx)
 		})
+		v1.GET("/destiny-group", func(ctx *gin.Context) {
+			h.RetrieveGroup(ctx)
+		})
 	}
 	return &router
 }

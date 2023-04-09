@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"TT-Micro-Backend-Destiny/pkg/dto"
 	"TT-Micro-Backend-Destiny/pkg/models"
 	"context"
 
@@ -19,6 +20,7 @@ type DestinyInterface interface {
 	DeleteDestiny(ctx context.Context, destinyID string) ([]models.Destiny, error)
 	GetDestinyList(ctx context.Context) ([]models.Destiny, error)
 	AddDestiny(ctx context.Context, destiny models.Destiny) (interface{}, error)
+	RetrieveGroupDestiny(ctx context.Context, destinyIDs dto.RetrieveGroupDestinyRequest) ([]models.Destiny, error)
 }
 
 // Interface define the methods for the repository.

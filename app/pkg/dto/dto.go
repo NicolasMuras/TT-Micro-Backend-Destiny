@@ -7,6 +7,14 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type RetrieveGroupDestinyResponse struct {
+	DestinyGroup []models.Destiny `json:"destiny_group"`
+}
+
+type RetrieveGroupDestinyRequest struct {
+	IDs []string `json:"destiny_ids"`
+}
+
 type RetrieveDestinyResponse struct {
 	ID                  primitive.ObjectID       `bson:"_id,omitempty" json:"id,omitempty"`
 	City                string                   `json:"city"`

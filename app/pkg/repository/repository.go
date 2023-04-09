@@ -2,9 +2,12 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"sync"
 	"time"
 
+	"TT-Micro-Backend-Destiny/pkg/dto"
 	"TT-Micro-Backend-Destiny/pkg/models"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -115,4 +118,85 @@ func (r *DestinyRepository) AddDestiny(ctx context.Context, destiny models.Desti
 		return primitive.ObjectID{}, err
 	}
 	return id, nil
+}
+
+func (r *DestinyRepository) RetrieveGroupDestiny(ctx context.Context, destinyIds dto.RetrieveGroupDestinyRequest) ([]models.Destiny, error) {
+
+	retrieveRequest := func(ch chan models.Destiny, key string) {
+		var destiny models.Destiny
+
+		if err := CollectionFindOne(r.db, ctx, bson.M{}).Decode(&destiny); err != nil {
+			ch <- models.Destiny{}
+		}
+
+		ch <- destiny
+
+		close(ch)
+	}
+
+	// We allocate dynamically the channels in this variable
+	var channels []chan models.Destiny
+
+	// Iterate through the ids needed to make the request to get the info.
+	for _, id := range destinyIds.IDs {
+		// A channel is created per id.
+		ch := make(chan models.Destiny)
+		// Append the new channel to the channels array.
+		channels = append(channels, ch)
+		// The http request is executed.
+		go retrieveRequest(ch, id)
+	}
+
+	exit := make(chan struct{})
+
+	mainChannel := merge(channels)
+
+	var destinyList []models.Destiny
+
+	go func() {
+		for destiny := range mainChannel {
+			// we need to return here the json of destinies
+			fmt.Println(destiny)
+			destinyList = append(destinyList, destiny)
+		}
+		close(exit)
+	}()
+
+	<-exit
+	fmt.Println("\n[+] All request completed.")
+
+	return destinyList, nil
+}
+
+// merge is used to merge a number of channels in one main channel
+// and finally return the new channel.
+func merge(cs []chan models.Destiny) <-chan models.Destiny {
+	var wg sync.WaitGroup
+
+	// we define the main channel
+	out := make(chan models.Destiny)
+
+	// we define a function that takes a channel as argument and decrement wait count in 1.
+	send := func(c <-chan models.Destiny) {
+		for n := range c {
+			out <- n
+		}
+		wg.Done()
+	}
+
+	// we set up the wait counter accordly to the amount of channels.
+	wg.Add(len(cs))
+
+	// we iterate through the channels and start to execute a go routine for each one.
+	for _, c := range cs {
+		go send(c)
+	}
+	// finally this goroutine help us to wait until the process end and close the main channel.
+	go func() {
+		wg.Wait()
+
+		close(out)
+	}()
+	// we return the main channel
+	return out
 }

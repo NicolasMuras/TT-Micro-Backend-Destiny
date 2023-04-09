@@ -18,6 +18,7 @@ type DestinyInterface interface {
 	DeleteDestiny(ctx context.Context, destinyID string) (dto.DeleteDestinyResponse, error)
 	AddDestiny(ctx context.Context, destinyReq dto.AddDestinyRequest) (dto.AddDestinyResponse, error)
 	ListDestiny(ctx context.Context) (dto.ListDestinyResponse, error)
+	RetrieveGroupDestiny(ctx context.Context, destinyIDs dto.RetrieveGroupDestinyRequest) (dto.RetrieveGroupDestinyResponse, error)
 }
 
 // MockDestinyService defines the mock Destiny Service.

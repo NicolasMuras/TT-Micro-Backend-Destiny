@@ -11,6 +11,56 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func (h *Handler) RetrieveGroup(ctx *gin.Context) {
+	ID := ctx.Param("id")
+	// make redis key to store and retrieve
+	redisKey := fmt.Sprintf("%s:%s", "Destiny", ID)
+
+	// get the response in cache
+	response, rediserr := h.redisCache.Get(ctx, redisKey)
+	if rediserr != nil {
+		ctx.JSON(http.StatusInternalServerError, rediserr.Error())
+		return
+	}
+	if response != nil {
+		// cache exist
+		var newRetrieveGroupDestinyResponse dto.RetrieveGroupDestinyResponse
+		jsonerr := json.Unmarshal(response, &newRetrieveGroupDestinyResponse)
+		if jsonerr != nil {
+			ctx.JSON(http.StatusInternalServerError, jsonerr.Error())
+			return
+		}
+		ctx.IndentedJSON(http.StatusOK, newRetrieveGroupDestinyResponse)
+		return
+	}
+	// cache does not exist and retrieve Destiny data from db
+	var newRetrieveGroupDestinyRequest dto.RetrieveGroupDestinyRequest
+
+	jsonerr := ctx.BindJSON(&newRetrieveGroupDestinyRequest)
+	if jsonerr != nil {
+		ctx.JSON(http.StatusBadRequest, jsonerr.Error())
+		return
+	}
+	newRetrieveGroupDestinyResponse, err := h.DestinyService.RetrieveGroupDestiny(ctx, newRetrieveGroupDestinyRequest)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, err.Error())
+		return
+	}
+	data, jsonerr := json.Marshal(newRetrieveGroupDestinyResponse)
+	if jsonerr != nil {
+		ctx.JSON(http.StatusInternalServerError, jsonerr.Error())
+		return
+	}
+
+	rediserr = h.redisCache.Set(ctx, redisKey, string(data), 120*time.Second)
+	if rediserr != nil {
+		ctx.JSON(http.StatusInternalServerError, rediserr.Error())
+		return
+	}
+
+	ctx.JSON(http.StatusOK, newRetrieveGroupDestinyResponse)
+}
+
 func (h *Handler) Retrieve(ctx *gin.Context) {
 	ID := ctx.Param("id")
 	// make redis key to store and retrieve
@@ -46,7 +96,7 @@ func (h *Handler) Retrieve(ctx *gin.Context) {
 		return
 	}
 
-	rediserr = h.redisCache.Set(ctx, redisKey, string(data), 10*time.Second)
+	rediserr = h.redisCache.Set(ctx, redisKey, string(data), 120*time.Second)
 	if rediserr != nil {
 		ctx.JSON(http.StatusInternalServerError, rediserr.Error())
 		return
@@ -128,7 +178,7 @@ func (h *Handler) List(ctx *gin.Context) {
 		return
 	}
 
-	rediserr = h.redisCache.Set(ctx, "ListDestiny", string(data), 10*time.Second)
+	rediserr = h.redisCache.Set(ctx, "ListDestiny", string(data), 120*time.Second)
 	if rediserr != nil {
 		ctx.JSON(http.StatusInternalServerError, rediserr.Error())
 		return

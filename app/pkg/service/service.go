@@ -8,6 +8,16 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+func (s *DestinyService) RetrieveGroupDestiny(ctx context.Context, destinyIDs dto.RetrieveGroupDestinyRequest) (dto.RetrieveGroupDestinyResponse, error) {
+	destinies, err := s.Repository.RetrieveGroupDestiny(ctx, destinyIDs)
+	if err != nil {
+		return dto.RetrieveGroupDestinyResponse{}, err
+	}
+	return dto.RetrieveGroupDestinyResponse{
+		DestinyGroup: destinies,
+	}, nil
+}
+
 func (s *DestinyService) RetrieveDestiny(ctx context.Context, destinyID string) (dto.RetrieveDestinyResponse, error) {
 	destiny, err := s.Repository.RetrieveDestiny(ctx, destinyID)
 	if err != nil {
